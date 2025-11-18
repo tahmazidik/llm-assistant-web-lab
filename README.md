@@ -42,6 +42,11 @@ internal/
     jsonstore/
     postgres/
   models/              # доменные модели (User, Dialog, Message, Task)
+    users.go
+    dialogs.go
+    messages.go
+    tasks.go
+    note.go
 
 api/                   # (в будущем) OpenAPI/Swagger спецификация
 configs/               # конфиги (yaml/json)
