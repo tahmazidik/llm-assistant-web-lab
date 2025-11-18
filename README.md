@@ -18,11 +18,11 @@
     - `internal/app` — сборка и запуск приложения;
     - `internal/transport/http` — HTTP-роутер и хендлеры;
     - `internal/config` — конфигурация;
-    - (позже) `internal/services`, `internal/database`, `internal/models`.
+    - (позже) `internal/services`, `internal/database`
 
 ---
 
-## Структура проекта (основное)
+## Структура проекта
 
 ```text
 cmd/
