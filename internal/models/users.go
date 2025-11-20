@@ -12,6 +12,6 @@ type User struct {
 	Email        string    `json:"email"`
 	PasswordHash string    `json:"-"`
 	Name         string    `json:"name"`
-	CreateAt     time.Time `json:"create_at"`
-	UpdateAt     time.Time `json:"update_at"`
+	CreatedAt    time.Time `json:"create_at"`
+	UpdatedAt    time.Time `json:"update_at"`
 }
