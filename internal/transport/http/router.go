@@ -18,6 +18,7 @@ func NewRouter(userService userssvc.Service) *stdhttp.ServeMux {
 	// хендлер пользователей
 	userHandler := usershttp.NewUserHandler(userService)
 	mux.HandleFunc("/users/register", userHandler.Register)
+	mux.HandleFunc("/users/login", userHandler.Login)
 
 	return mux
 }
