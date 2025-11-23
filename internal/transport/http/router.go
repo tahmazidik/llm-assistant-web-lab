@@ -1,23 +1,23 @@
 package http
 
 import (
-	"log"
 	stdhttp "net/http"
+
+	userssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
+	"github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/health"
+	usershttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/users"
 )
 
 // NewRouter создает и настраивает HTTP-роутер приложения
-func NewRouter() *stdhttp.ServeMux {
+func NewRouter(userService userssvc.Service) *stdhttp.ServeMux {
 	mux := stdhttp.NewServeMux()
 
 	// эндпоинт для проверки живости сервера
-	mux.HandleFunc("/health", HealthHandler)
+	mux.HandleFunc("/health", health.Handler)
+
+	// хендлер пользователей
+	userHandler := usershttp.NewUserHandler(userService)
+	mux.HandleFunc("/users/register", userHandler.Register)
 
 	return mux
-}
-
-func HealthHandler(w stdhttp.ResponseWriter, r *stdhttp.Request) {
-	w.WriteHeader(stdhttp.StatusOK)
-	if _, err := w.Write([]byte("ok")); err != nil {
-		log.Println("write response error:", err)
-	}
 }

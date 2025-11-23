@@ -49,7 +49,7 @@ func (ur *UserRepository) GetByEmail(ctx context.Context, email string) (*models
 
 	user, ok := ur.byEmail[email]
 	if !ok {
-		return nil, usersvc.ErrUserNotFound
+		return nil, nil
 	}
 
 	return user, nil
@@ -62,7 +62,7 @@ func (ur *UserRepository) GetByID(ctx context.Context, id models.UserID) (*model
 
 	user, ok := ur.byID[id]
 	if !ok {
-		return nil, usersvc.ErrUserNotFound
+		return nil, nil
 	}
 
 	return user, nil

@@ -25,7 +25,7 @@ func New(cfg *config.Config) *Application {
 	// создаем сервис пользователей
 	userService := usersvc.NewService(userRepo)
 	// создаем роутер
-	router := apphttp.NewRouter()
+	router := apphttp.NewRouter(userService)
 
 	// кладем все в Application
 	return &Application{
