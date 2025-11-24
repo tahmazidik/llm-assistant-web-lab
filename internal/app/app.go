@@ -8,14 +8,17 @@ import (
 	apphttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http"
 
 	memory "github.com/tahmazidik/llm-assistant-web-lab/internal/database/memory"
-	usersvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
+	userssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
+
+	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
 )
 
 // Application хранит все, что нужно для запуска сервера
 type Application struct {
-	cfg         *config.Config //на каком адресе запускать сервер
-	router      *http.ServeMux // HTTP роутер
-	userService usersvc.Service
+	cfg           *config.Config // на каком адресе запускать сервер
+	router        *http.ServeMux // HTTP роутер
+	userService   userssvc.Service
+	dialogService dialogssvc.Service
 }
 
 // New создает новое приложение: настраивает роутер и порт
@@ -23,15 +26,22 @@ func New(cfg *config.Config) *Application {
 	// Создаем репозиторий пользователей(in-memory)
 	userRepo := memory.NewUserRepository()
 	// создаем сервис пользователей
-	userService := usersvc.NewService(userRepo)
+	userService := userssvc.NewService(userRepo)
+
+	// Репозитории для диалогов и сообщений(in-memory)
+	dialogRepo := memory.NewDialogRepository()
+	messageRepo := memory.NewMessageRepository()
+	dialogService := dialogssvc.NewService(dialogRepo, messageRepo)
+
 	// создаем роутер
-	router := apphttp.NewRouter(userService)
+	router := apphttp.NewRouter(userService, dialogService)
 
 	// кладем все в Application
 	return &Application{
-		cfg:         cfg,
-		router:      router,
-		userService: userService,
+		cfg:           cfg,
+		router:        router,
+		userService:   userService,
+		dialogService: dialogService,
 	}
 }
 
