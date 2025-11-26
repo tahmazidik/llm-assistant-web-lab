@@ -27,6 +27,7 @@ func NewRouter(userService userssvc.Service, dialogService dialogssvc.Service) *
 	mux.HandleFunc("/users/register", userHandler.Register)
 	mux.HandleFunc("/users/login", userHandler.Login)
 	mux.HandleFunc("/dialogs", dialogHandler.Create)
+	mux.HandleFunc("/dialogs/list", dialogHandler.List)
 
 	return mux
 }

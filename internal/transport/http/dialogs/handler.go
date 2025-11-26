@@ -48,7 +48,7 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if body.Title == "" {
-		http.Error(w, "title is requierd", http.StatusBadRequest)
+		http.Error(w, "title is requirerd", http.StatusBadRequest)
 		return
 	}
 
@@ -75,5 +75,34 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(dialog); err != nil {
 		log.Println("encode response error: ", err)
+	}
+}
+
+// List обрабатывает GET/dialogs/list запрос для получения списка диалогов пользователя
+func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
+	// Разрешаем только GET
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID := r.URL.Query().Get("user_id")
+	if userID == "" {
+		http.Error(w, "user_id is required", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+
+	dialogs, err := handler.DialogService.ListDialogs(ctx, models.UserID(userID))
+	if err != nil {
+		log.Println("list dialogs error: ", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(dialogs); err != nil {
+		log.Println("write response error: ", err)
 	}
 }
