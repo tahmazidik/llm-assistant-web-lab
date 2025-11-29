@@ -7,6 +7,7 @@ import (
 
 	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
+	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
 )
 
 // Handler отвечает за HTTP-операции, связанные с диалогами
@@ -30,25 +31,25 @@ type createdDialogResponse struct {
 func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	// Разрешаем только POST
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		httpresp.Error(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	// Парсим JSON из тела запроса
 	var body createdDialogResponse
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "invalid json", http.StatusBadRequest)
+		httpresp.Error(w, http.StatusBadRequest, "invalid json")
 		return
 	}
 
 	// Проверка полей, что они не пустые
 	if body.UserID == "" {
-		http.Error(w, "user_id required", http.StatusBadRequest)
+		httpresp.Error(w, http.StatusBadRequest, "user_id required")
 		return
 	}
 
 	if body.Title == "" {
-		http.Error(w, "title is requirerd", http.StatusBadRequest)
+		httpresp.Error(w, http.StatusBadRequest, "title is required")
 		return
 	}
 
@@ -63,32 +64,28 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case dialogssvc.ErrEmptyDialogTitle:
-			http.Error(w, "title cannot be empty", http.StatusBadRequest)
+			httpresp.Error(w, http.StatusBadRequest, "title cannot be empty")
 		default:
 			log.Println("create dialog error: ", err)
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			httpresp.Error(w, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(dialog); err != nil {
-		log.Println("encode response error: ", err)
-	}
+	httpresp.JSON(w, http.StatusCreated, dialog)
 }
 
 // List обрабатывает GET/dialogs/list запрос для получения списка диалогов пользователя
 func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 	// Разрешаем только GET
 	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		httpresp.Error(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
-		http.Error(w, "user_id is required", http.StatusBadRequest)
+		httpresp.Error(w, http.StatusBadRequest, "user_id is required")
 		return
 	}
 
@@ -97,12 +94,9 @@ func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 	dialogs, err := handler.DialogService.ListDialogs(ctx, models.UserID(userID))
 	if err != nil {
 		log.Println("list dialogs error: ", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		httpresp.Error(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(dialogs); err != nil {
-		log.Println("write response error: ", err)
-	}
+	httpresp.JSON(w, http.StatusOK, dialogs)
 }

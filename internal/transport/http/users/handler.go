@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	userssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
+	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
 )
 
 // UserHandler отвечает за HTTP-операции, свяанные с пользователями
@@ -31,14 +32,29 @@ type registerRequest struct {
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// Разрешаем только POST
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		httpresp.Error(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	//Парсим JSON из тела запроса
 	var req registerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid json", http.StatusBadRequest)
+		httpresp.Error(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+
+	if req.Email == "" {
+		httpresp.Error(w, http.StatusBadRequest, "email is required")
+		return
+	}
+
+	if req.Password == "" {
+		httpresp.Error(w, http.StatusBadRequest, "password is required")
+		return
+	}
+
+	if req.Name == "" {
+		httpresp.Error(w, http.StatusBadRequest, "name is required")
 		return
 	}
 
@@ -48,20 +64,16 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case userssvc.ErrEmailAlreadyInUse:
-			http.Error(w, "email already in use", http.StatusConflict)
+			httpresp.Error(w, http.StatusConflict, "email already in use")
 		default:
 			log.Println("error registering user:", err)
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			httpresp.Error(w, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
 
 	//Отдаем созданного пользователя
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		log.Println("write response error: ", err)
-	}
+	httpresp.JSON(w, http.StatusCreated, user)
 }
 
 type loginRequest struct {
@@ -72,13 +84,23 @@ type loginRequest struct {
 // Login обрабатывает POST /users/login
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		httpresp.Error(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid json", http.StatusBadRequest)
+		httpresp.Error(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+
+	if req.Email == "" {
+		httpresp.Error(w, http.StatusBadRequest, "email is required")
+		return
+	}
+
+	if req.Password == "" {
+		httpresp.Error(w, http.StatusBadRequest, "password is required")
 		return
 	}
 
@@ -87,16 +109,13 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err {
 		case userssvc.ErrInvalidCredentials:
-			http.Error(w, "invalid email or password", http.StatusUnauthorized)
+			httpresp.Error(w, http.StatusUnauthorized, "invalid email or password")
 		default:
 			log.Println("error authenticating user:", err)
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			httpresp.Error(w, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(user); err != nil {
-		log.Println("write response error: ", err)
-	}
+	httpresp.JSON(w, http.StatusOK, user)
 }
