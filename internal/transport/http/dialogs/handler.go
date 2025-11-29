@@ -10,6 +10,9 @@ import (
 	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
 )
 
+// временный демо-пользователь, пока нет реальной авторизации
+const demoUserID = models.UserID("demo-user-1")
+
 // Handler отвечает за HTTP-операции, связанные с диалогами
 type Handler struct {
 	DialogService dialogssvc.Service
@@ -23,8 +26,7 @@ func NewHandler(dialogService dialogssvc.Service) *Handler {
 }
 
 type createdDialogResponse struct {
-	UserID string `json:"user_id"`
-	Title  string `json:"title"`
+	Title string `json:"title"`
 }
 
 // Create обрабатывает POST/dialogs запрос для создания нового диалога
@@ -42,12 +44,6 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Проверка полей, что они не пустые
-	if body.UserID == "" {
-		httpresp.Error(w, http.StatusBadRequest, "user_id required")
-		return
-	}
-
 	if body.Title == "" {
 		httpresp.Error(w, http.StatusBadRequest, "title is required")
 		return
@@ -57,7 +53,7 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	dialog, err := handler.DialogService.CreateDialog(
 		ctx,
-		models.UserID(body.UserID),
+		demoUserID,
 		body.Title,
 	)
 
@@ -83,15 +79,8 @@ func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		httpresp.Error(w, http.StatusBadRequest, "user_id is required")
-		return
-	}
-
 	ctx := r.Context()
-
-	dialogs, err := handler.DialogService.ListDialogs(ctx, models.UserID(userID))
+	dialogs, err := handler.DialogService.ListDialogs(ctx, demoUserID)
 	if err != nil {
 		log.Println("list dialogs error: ", err)
 		httpresp.Error(w, http.StatusInternalServerError, "internal server error")
