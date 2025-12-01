@@ -1,0 +1,22 @@
+/* frontend/app/shared/assets/css/main.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: 'Panama';
+    src: url('../fonts/Panama_Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #020617; /* тёмный фон */
+    color: #e5e7eb;            /* светлый текст (slate-200) */
+    font-family: 'Panama', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+}
