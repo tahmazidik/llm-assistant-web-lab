@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
 )
 
 var (

@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
-	authhttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/auth"
-	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
+	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
+	authhttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/auth"
+	httpresp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/response"
 )
 
 // Handler отвечает за HTTP-операции, связанные с диалогами

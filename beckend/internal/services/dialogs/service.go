@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
+	models2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
 )
 
 // Понятные ошибки доменного уровня для диалогов
@@ -20,30 +20,30 @@ var (
 // Service описывает бизнес-логику для работы с диалогами
 type Service interface {
 	// CreateDialog создает новый диалог для пользователя
-	CreateDialog(ctx context.Context, userID models.UserID, title string) (*models.Dialog, error)
+	CreateDialog(ctx context.Context, userID models2.UserID, title string) (*models2.Dialog, error)
 
 	//ListDialogs возвращает список диалогов пользователя
-	ListDialogs(ctx context.Context, userID models.UserID) ([]*models.Dialog, error)
+	ListDialogs(ctx context.Context, userID models2.UserID) ([]*models2.Dialog, error)
 
 	// AddMessage добавляет сообщение в диалог
-	AddMessage(ctx context.Context, dialogID models.DialogID, sender models.SenderType, content string) (*models.Message, error)
+	AddMessage(ctx context.Context, dialogID models2.DialogID, sender models2.SenderType, content string) (*models2.Message, error)
 
 	// ListMessages возвращает все сообщения диалога
-	ListMessages(ctx context.Context, dialogID models.DialogID) ([]*models.Message, error)
+	ListMessages(ctx context.Context, dialogID models2.DialogID) ([]*models2.Message, error)
 }
 
 // DialogRepository описывает операции с диалогами в хранилище
 type DialogRepository interface {
-	Create(ctx context.Context, dialogID *models.Dialog) error
-	GetByID(ctx context.Context, dialogID models.DialogID) (*models.Dialog, error)
-	ListByUser(ctx context.Context, userID models.UserID) ([]*models.Dialog, error)
-	Update(ctx context.Context, dialog *models.Dialog) error
+	Create(ctx context.Context, dialogID *models2.Dialog) error
+	GetByID(ctx context.Context, dialogID models2.DialogID) (*models2.Dialog, error)
+	ListByUser(ctx context.Context, userID models2.UserID) ([]*models2.Dialog, error)
+	Update(ctx context.Context, dialog *models2.Dialog) error
 }
 
 // MessageRepository описывает операции с сообщениями в хранилище
 type MessageRepository interface {
-	Create(ctx context.Context, msg *models.Message) error
-	ListByDialog(ctx context.Context, dialogID models.DialogID) ([]*models.Message, error)
+	Create(ctx context.Context, msg *models2.Message) error
+	ListByDialog(ctx context.Context, dialogID models2.DialogID) ([]*models2.Message, error)
 }
 
 // service - конкретная реализация Service
@@ -61,7 +61,7 @@ func NewService(dialogRepo DialogRepository, messageRepo MessageRepository) Serv
 	}
 }
 
-func (svc *service) CreateDialog(ctx context.Context, userID models.UserID, title string) (*models.Dialog, error) {
+func (svc *service) CreateDialog(ctx context.Context, userID models2.UserID, title string) (*models2.Dialog, error) {
 	title = strings.TrimSpace(title)
 	if title == "" {
 		return nil, ErrEmptyDialogTitle
@@ -69,8 +69,8 @@ func (svc *service) CreateDialog(ctx context.Context, userID models.UserID, titl
 
 	now := svc.now()
 
-	dialog := &models.Dialog{
-		ID:       models.DialogID(uuid.NewString()),
+	dialog := &models2.Dialog{
+		ID:       models2.DialogID(uuid.NewString()),
 		UserID:   userID,
 		Title:    title,
 		CreateAt: now,
@@ -84,11 +84,11 @@ func (svc *service) CreateDialog(ctx context.Context, userID models.UserID, titl
 	return dialog, nil
 }
 
-func (svc *service) ListDialogs(ctx context.Context, userID models.UserID) ([]*models.Dialog, error) {
+func (svc *service) ListDialogs(ctx context.Context, userID models2.UserID) ([]*models2.Dialog, error) {
 	return svc.dialogRepo.ListByUser(ctx, userID)
 }
 
-func (svc *service) AddMessage(ctx context.Context, dialogID models.DialogID, sender models.SenderType, content string) (*models.Message, error) {
+func (svc *service) AddMessage(ctx context.Context, dialogID models2.DialogID, sender models2.SenderType, content string) (*models2.Message, error) {
 	content = strings.TrimSpace(content)
 	if content == "" {
 		return nil, ErrEmptyMessageContent
@@ -106,8 +106,8 @@ func (svc *service) AddMessage(ctx context.Context, dialogID models.DialogID, se
 
 	now := svc.now()
 
-	msg := &models.Message{
-		ID:       models.MessageID(uuid.NewString()),
+	msg := &models2.Message{
+		ID:       models2.MessageID(uuid.NewString()),
 		DialogID: dialogID,
 		Sender:   sender,
 		Content:  content,
@@ -129,7 +129,7 @@ func (svc *service) AddMessage(ctx context.Context, dialogID models.DialogID, se
 }
 
 // Возвращает все сообщения диалога
-func (svc *service) ListMessages(ctx context.Context, dialogID models.DialogID) ([]*models.Message, error) {
+func (svc *service) ListMessages(ctx context.Context, dialogID models2.DialogID) ([]*models2.Message, error) {
 	//TODO: проверить что диалог существует
 	return svc.messageRepo.ListByDialog(ctx, dialogID)
 }

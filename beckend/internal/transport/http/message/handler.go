@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
-	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
-	authhttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/auth"
-	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
+	models2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
+	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
+	authhttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/auth"
+	httpresp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/response"
 )
 
 type Handler struct {
@@ -62,8 +62,8 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sender := models.SenderType(body.Sender)
-	if sender != models.SenderUser && sender != models.SenderAssistant {
+	sender := models2.SenderType(body.Sender)
+	if sender != models2.SenderUser && sender != models2.SenderAssistant {
 		httpresp.Error(w, http.StatusBadRequest, "invalid sender type")
 		return
 	}
@@ -71,7 +71,7 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	msg, err := handler.DialogService.AddMessage(
 		ctx,
-		models.DialogID(body.DialogID),
+		models2.DialogID(body.DialogID),
 		sender,
 		body.Content,
 	)
@@ -116,7 +116,7 @@ func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	msg, err := handler.DialogService.ListMessages(ctx, models.DialogID(dialogID))
+	msg, err := handler.DialogService.ListMessages(ctx, models2.DialogID(dialogID))
 	if err != nil {
 		log.Println("list messages error: ", err)
 		httpresp.Error(w, http.StatusInternalServerError, "internal server error")

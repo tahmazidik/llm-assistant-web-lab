@@ -4,15 +4,15 @@ import (
 	"context"
 	"sync"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
-	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
+	models2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
+	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
 )
 
 // DialogRepository - in-memory хранилище диалогов
 type DialogRepository struct {
 	mu       sync.RWMutex
-	byID     map[models.DialogID]*models.Dialog
-	byUserID map[models.UserID][]*models.Dialog
+	byID     map[models2.DialogID]*models2.Dialog
+	byUserID map[models2.UserID][]*models2.Dialog
 }
 
 var _ dialogssvc.DialogRepository = (*DialogRepository)(nil)
@@ -20,13 +20,13 @@ var _ dialogssvc.DialogRepository = (*DialogRepository)(nil)
 // NewDialogRepository создает пустое хранилище диалогов
 func NewDialogRepository() *DialogRepository {
 	return &DialogRepository{
-		byID:     make(map[models.DialogID]*models.Dialog),
-		byUserID: make(map[models.UserID][]*models.Dialog),
+		byID:     make(map[models2.DialogID]*models2.Dialog),
+		byUserID: make(map[models2.UserID][]*models2.Dialog),
 	}
 }
 
 // Create сохраняет новый диалог
-func (dialogRepo *DialogRepository) Create(ctx context.Context, dialog *models.Dialog) error {
+func (dialogRepo *DialogRepository) Create(ctx context.Context, dialog *models2.Dialog) error {
 	dialogRepo.mu.Lock()
 	defer dialogRepo.mu.Unlock()
 
@@ -37,7 +37,7 @@ func (dialogRepo *DialogRepository) Create(ctx context.Context, dialog *models.D
 }
 
 // GetByID ищет диалог по ID
-func (dialogRepo *DialogRepository) GetByID(ctx context.Context, id models.DialogID) (*models.Dialog, error) {
+func (dialogRepo *DialogRepository) GetByID(ctx context.Context, id models2.DialogID) (*models2.Dialog, error) {
 	dialogRepo.mu.RLock()
 	defer dialogRepo.mu.RUnlock()
 
@@ -50,20 +50,20 @@ func (dialogRepo *DialogRepository) GetByID(ctx context.Context, id models.Dialo
 }
 
 // ListByUser возвращает все диалоги пользователя
-func (dialogRepo *DialogRepository) ListByUser(ctx context.Context, userID models.UserID) ([]*models.Dialog, error) {
+func (dialogRepo *DialogRepository) ListByUser(ctx context.Context, userID models2.UserID) ([]*models2.Dialog, error) {
 	dialogRepo.mu.RLock()
 	defer dialogRepo.mu.RUnlock()
 
 	dialogs, ok := dialogRepo.byUserID[userID]
 	if !ok {
-		return []*models.Dialog{}, nil
+		return []*models2.Dialog{}, nil
 	}
 
 	return dialogs, nil
 }
 
 // Update обновляет диалог
-func (dialogRepo *DialogRepository) Update(ctx context.Context, dialog *models.Dialog) error {
+func (dialogRepo *DialogRepository) Update(ctx context.Context, dialog *models2.Dialog) error {
 	dialogRepo.mu.Lock()
 	defer dialogRepo.mu.Unlock()
 

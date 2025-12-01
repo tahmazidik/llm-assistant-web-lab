@@ -3,14 +3,12 @@ package http
 import (
 	stdhttp "net/http"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/health"
-
-	dialogshttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/dialogs"
-	messagehttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/message"
-	usershttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/users"
-
-	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
-	userssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
+	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
+	userssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/users"
+	dialogshttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/dialogs"
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/health"
+	messagehttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/message"
+	usershttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/users"
 )
 
 // NewRouter создает и настраивает HTTP-роутер приложения

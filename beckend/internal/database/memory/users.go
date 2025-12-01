@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
-	usersvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
+	usersvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/users"
 )
 
 // UserRepository - простое in-memory хранилище пользователей

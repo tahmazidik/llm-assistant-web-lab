@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/app"
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/config"
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/app"
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/config"
 )
 
 func main() {

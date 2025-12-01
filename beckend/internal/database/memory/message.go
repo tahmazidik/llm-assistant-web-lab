@@ -4,14 +4,14 @@ import (
 	"context"
 	"sync"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
-	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
+	models2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
+	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
 )
 
 // MessageRepository - in-memory хранилище сообщений
 type MessageRepository struct {
 	mu         sync.RWMutex
-	byDialogID map[models.DialogID][]*models.Message
+	byDialogID map[models2.DialogID][]*models2.Message
 }
 
 var _ dialogssvc.MessageRepository = (*MessageRepository)(nil)
@@ -19,12 +19,12 @@ var _ dialogssvc.MessageRepository = (*MessageRepository)(nil)
 // NewMessageRepository создает пустое хранилище сообщений
 func NewMessageRepository() *MessageRepository {
 	return &MessageRepository{
-		byDialogID: make(map[models.DialogID][]*models.Message),
+		byDialogID: make(map[models2.DialogID][]*models2.Message),
 	}
 }
 
 // Create сохраняет новое сообщение
-func (repo *MessageRepository) Create(ctx context.Context, message *models.Message) error {
+func (repo *MessageRepository) Create(ctx context.Context, message *models2.Message) error {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -33,13 +33,13 @@ func (repo *MessageRepository) Create(ctx context.Context, message *models.Messa
 	return nil
 }
 
-func (repo *MessageRepository) ListByDialog(ctx context.Context, dialogID models.DialogID) ([]*models.Message, error) {
+func (repo *MessageRepository) ListByDialog(ctx context.Context, dialogID models2.DialogID) ([]*models2.Message, error) {
 	repo.mu.RLock()
 	defer repo.mu.RUnlock()
 
 	messages, ok := repo.byDialogID[dialogID]
 	if !ok {
-		return []*models.Message{}, nil
+		return []*models2.Message{}, nil
 	}
 
 	return messages, nil

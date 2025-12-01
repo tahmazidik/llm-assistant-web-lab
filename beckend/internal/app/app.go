@@ -4,13 +4,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/config"
-	apphttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http"
-
-	memory "github.com/tahmazidik/llm-assistant-web-lab/internal/database/memory"
-	userssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
-
-	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/config"
+	memory2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/database/memory"
+	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
+	userssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/users"
+	apphttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http"
 )
 
 // Application хранит все, что нужно для запуска сервера
@@ -24,13 +22,13 @@ type Application struct {
 // New создает новое приложение: настраивает роутер и порт
 func New(cfg *config.Config) *Application {
 	// Создаем репозиторий пользователей(in-memory)
-	userRepo := memory.NewUserRepository()
+	userRepo := memory2.NewUserRepository()
 	// создаем сервис пользователей
 	userService := userssvc.NewService(userRepo)
 
 	// Репозитории для диалогов и сообщений(in-memory)
-	dialogRepo := memory.NewDialogRepository()
-	messageRepo := memory.NewMessageRepository()
+	dialogRepo := memory2.NewDialogRepository()
+	messageRepo := memory2.NewMessageRepository()
 	dialogService := dialogssvc.NewService(dialogRepo, messageRepo)
 
 	// создаем роутер

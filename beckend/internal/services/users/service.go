@@ -7,9 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
 )
 
 // Понятные ошибки доменного уровня

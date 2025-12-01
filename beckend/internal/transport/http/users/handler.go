@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
-	userssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
-	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
+	userssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/users"
+	httpresp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/response"
 )
 
 const demoToken = "demo-token-123"
