@@ -2,16 +2,14 @@ package dialogs
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
-	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
+	authhttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/auth"
 	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
 )
-
-// временный демо-пользователь, пока нет реальной авторизации
-const demoUserID = models.UserID("demo-user-1")
 
 // Handler отвечает за HTTP-операции, связанные с диалогами
 type Handler struct {
@@ -49,11 +47,22 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, err := authhttp.UserIDFromRequest(r)
+	if err != nil {
+		if errors.Is(err, authhttp.ErrNotAuthHeader) || errors.Is(err, authhttp.ErrInvalidToken) {
+			httpresp.Error(w, http.StatusBadRequest, "invalid token")
+			return
+		}
+		log.Println("auth error: ", err)
+		httpresp.Error(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
 	// Вызываем бизнес-логику для создания диалога
 	ctx := r.Context()
 	dialog, err := handler.DialogService.CreateDialog(
 		ctx,
-		demoUserID,
+		userID,
 		body.Title,
 	)
 
@@ -79,8 +88,19 @@ func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, err := authhttp.UserIDFromRequest(r)
+	if err != nil {
+		if errors.Is(err, authhttp.ErrNotAuthHeader) || errors.Is(err, authhttp.ErrInvalidToken) {
+			httpresp.Error(w, http.StatusBadRequest, "invalid token")
+			return
+		}
+		log.Println("auth error: ", err)
+		httpresp.Error(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
 	ctx := r.Context()
-	dialogs, err := handler.DialogService.ListDialogs(ctx, demoUserID)
+	dialogs, err := handler.DialogService.ListDialogs(ctx, userID)
 	if err != nil {
 		log.Println("list dialogs error: ", err)
 		httpresp.Error(w, http.StatusInternalServerError, "internal server error")

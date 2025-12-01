@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
 	userssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/users"
 	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
 )
 
-// UserHandler отвечает за HTTP-операции, свяанные с пользователями
+const demoToken = "demo-token-123"
+
+// UserHandler отвечает за HTTP-операции, связанные с пользователями
 type UserHandler struct {
 	UserService userssvc.Service
 }
@@ -81,6 +84,11 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
+type loginResponse struct {
+	User  *models.User `json:"user"`
+	Token string       `json:"token"`
+}
+
 // Login обрабатывает POST /users/login
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -117,5 +125,9 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpresp.JSON(w, http.StatusOK, user)
+	resp := loginResponse{
+		User:  user,
+		Token: demoToken,
+	}
+	httpresp.JSON(w, http.StatusOK, resp)
 }
