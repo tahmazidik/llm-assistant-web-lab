@@ -2,11 +2,13 @@ package message
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
 	"github.com/tahmazidik/llm-assistant-web-lab/internal/models"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/internal/services/dialogs"
+	authhttp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/auth"
 	httpresp "github.com/tahmazidik/llm-assistant-web-lab/internal/transport/http/response"
 )
 
@@ -30,6 +32,17 @@ func NewHandler(dialogService dialogssvc.Service) *Handler {
 func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		httpresp.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	_, err := authhttp.UserIDFromRequest(r)
+	if err != nil {
+		if errors.Is(err, authhttp.ErrNotAuthHeader) || errors.Is(err, authhttp.ErrInvalidToken) {
+			httpresp.Error(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		log.Println("auth error: ", err)
+		httpresp.Error(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -85,9 +98,20 @@ func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err := authhttp.UserIDFromRequest(r)
+	if err != nil {
+		if errors.Is(err, authhttp.ErrNotAuthHeader) || errors.Is(err, authhttp.ErrInvalidToken) {
+			httpresp.Error(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		log.Println("auth error: ", err)
+		httpresp.Error(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
 	dialogID := r.URL.Query().Get("dialog_id")
 	if dialogID == "" {
-		httpresp.Error(w, http.StatusBadRequest, "dialog_id is requierd")
+		httpresp.Error(w, http.StatusBadRequest, "dialog_id is required")
 		return
 	}
 
