@@ -49,5 +49,5 @@ func (app *Application) Run() error {
 	// пишем что стартуем
 	log.Println("starting http server on", addr)
 	// запускаем
-	return http.ListenAndServe(addr, app.router)
+	return http.ListenAndServe(addr, apphttp.WithCORS(app.router))
 }
