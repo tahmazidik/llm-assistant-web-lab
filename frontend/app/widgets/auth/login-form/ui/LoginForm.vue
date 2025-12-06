@@ -1,60 +1,28 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRuntimeConfig, navigateTo } from '#app'
+import { navigateTo } from '#app'
+import { useAuth } from '~/sharded/composables/useAuth'
 
 const email = ref('')
 const password = ref('')
 const pending = ref(false)
 const errorMessage = ref<string | null>(null)
 
-interface LoginResponse {
-  user: {
-    id: string
-    email: string
-    name: string
-    create_at: string
-    update_at: string
-  }
-  token: string
-}
-
-// если токен уже есть, редиректим на главную страницу не эффективно
-/*
-onMounted(() => {
-  const existingToken = localStorage.getItem('authToken')
-  if (existingToken) {
-    navigateTo('/')
-  }
-})*/
-
+const { login } = useAuth()
 
 const handleSubmit = async () => {
   errorMessage.value = null
   pending.value = true
 
   try {
-    const config = useRuntimeConfig()
-    const apiBase = (config.public.apiBase as string | undefined) || 'http://localhost:8080'
+    await login(email.value, password.value)
 
-    const res = await $fetch<LoginResponse>(`${apiBase}/users/login`, {
-      method: 'POST',
-      body: {
-        email: email.value,
-        password: password.value,
-      },
-    })
-
-    // сохраняем токен
-    localStorage.setItem('authToken', res.token)
-
-    // сохраняем имя пользователя
-    localStorage.setItem('authUser', JSON.stringify(res.user))
-
-    console.log('Login success:', res)
+    console.log('[login form] success')
 
     // редирект на главную страницу
     await navigateTo('/')
   } catch (err: any) {
+    console.error('[login form] error', err)
     errorMessage.value = err?.data?.error || 'Не удалось войти. Проверьте данные.'
   } finally {
     pending.value = false

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRuntimeConfig, navigateTo } from "#app"
+import { navigateTo } from "#app"
+import { useAuth } from '~/sharded/composables/useAuth'
 
 const name = ref('')
 const email = ref('')
@@ -8,59 +9,20 @@ const password = ref('')
 const pending = ref(false)
 const errorMessage = ref<string | null>(null)
 
-interface RegisterResponse {
-  id: string
-  email: string
-  name: string
-  create_at: string
-  update_at: string
-}
-
-interface LoginResponse {
-  user: {
-    id: string
-    email: string
-    name: string
-    create_at: string
-    update_at: string
-  }
-  token: string
-}
+const { signup } = useAuth()
 
 const handleSubmit = async () => {
   errorMessage.value = null
   pending.value = true
 
   try {
-    const config = useRuntimeConfig()
-    const apiBase = (config.public.apiBase as string | undefined) || 'http://localhost:8080'
+    await signup(name.value, email.value, password.value)
 
-    const res = await $fetch<RegisterResponse>(`${apiBase}/users/register`, {
-      method: 'POST',
-      body: {
-        email: email.value,
-        password: password.value,
-        name: name.value,
-      },
-    })
-
-    console.log('Signup success:', res)
-
-    const loginRes = await $fetch<LoginResponse>(`${apiBase}/users/login`, {
-      method: 'POST',
-      body: {
-        email: email.value,
-        password: password.value,
-      },
-    })
-
-    localStorage.setItem('authToken', loginRes.token)
-    localStorage.setItem('authUser', JSON.stringify(loginRes.user))
+    console.log('[signup form] signup + login success')
 
     await navigateTo('/')
-
-    await navigateTo('/login')
   } catch (err: any) {
+    console.error('[signup form] error', err)
     errorMessage.value = err?.data?.error || 'Не удалось зарегистрироваться. Попробуй еще раз.'
   } finally {
     pending.value = false

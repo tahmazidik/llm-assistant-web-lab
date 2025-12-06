@@ -1,41 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed } from 'vue'
 import { navigateTo } from '#app'
+import { useAuth } from '~/sharded/composables/useAuth'
 
-// состояние авторизации
-const isAuthenticated = ref(false)
-const userName = ref<string | null>(null)
+const { user, isAuthenticated, logout } = useAuth()
 
-// читаем токен и данные пользователя из localStorage
-onMounted(() => {
-  if (typeof window === 'undefined') return
+const userName = computed(() => user.value?.name || user.value?.email || null)
 
-  const token = window.localStorage.getItem('authToken')
-  const userRaw = window.localStorage.getItem('authUser')
-
-  isAuthenticated.value = !!token
-
-  if (userRaw) {
-    try {
-      const user = JSON.parse(userRaw) as { name?: string; email?: string }
-      userName.value = user.name || user.email || null
-    } catch {
-      userName.value = null
-    }
-  }
-})
-
-// выход
-const handleLogout = () => {
-  if (typeof window === 'undefined') return
-
-  window.localStorage.removeItem('authToken')
-  window.localStorage.removeItem('authUser')
-
-  isAuthenticated.value = false
-  userName.value = null
-
-  navigateTo('/login')
+const handleLogout = async () => {
+  logout()
+  await navigateTo('/login')
 }
 </script>
 
