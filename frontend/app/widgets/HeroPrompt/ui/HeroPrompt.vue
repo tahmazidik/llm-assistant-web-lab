@@ -1,4 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useDialogs } from '~/sharded/composables/useDialogs' // путь поправь
+
+const prompt = ref('')
+const { activeDialogId, createDialog, sendMessage } = useDialogs()
+
+async function handleSend() {
+  const text = prompt.value.trim()
+  if (!text) return
+
+  if (!activeDialogId.value) {
+    await createDialog(text.slice(0, 40))
+  }
+
+  await sendMessage(text)
+  prompt.value = ''
+}
 
 </script>
 
@@ -18,6 +35,8 @@
       <div class="bg-[#2e2d2d] border border-[#2e2d2d] rounded-3xl p-4 md:-5 shadow-xl shadow-black-40">
         <div class="flex items-center gap-3">
           <input
+              v-model="prompt"
+              @keydown.enter.prevent="handleSend"
               type="text"
               placeholder="Ask anything..."
               class="flex-1 bg-transparent outline-none text-white placeholder:text-white
@@ -25,7 +44,10 @@
                       focus:border-slate-200 transition"
           />
 
-          <button class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white
+          <button
+              type="button"
+              @click="handleSend"
+              class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white
                         text-xs font-semibold hover:bg-slate-200 transition flex-shrink-0">
             ▶
           </button>
