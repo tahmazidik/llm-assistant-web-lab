@@ -33,18 +33,20 @@ export function useDialogs() {
     const pending = useState<boolean>('dialogs:pending', () => false)
     const error = useState<string | null>('dialogs:error', () => null)
 
-    const authHeaders = computed<HeadersInit | undefined>(() => {
-        return token.value ? { Authorization: `Bearer ${token.value}` } : undefined
+    const authHeaders = computed(() => {
+        const t = token.value
+        return (t ? { Authorization: `Bearer ${t}` } : {}) as Record<string, string>
     })
 
     async function fetchDialogs() {
         pending.value = true
         error.value = null
         try {
-            dialogs.value = await $fetch<Dialog[]>(`${apiBase}/dialogs/list`, {
+            const res = await $fetch<Dialog[]>(`${apiBase}/dialogs/list`, {
                 method: 'GET',
                 headers: authHeaders.value
             })
+            dialogs.value = Array.isArray(res) ? res : []
             return dialogs.value
         } catch (err: any) {
             error.value = err?.data?.error || err?.message || 'Failed to load dialogs'
@@ -84,13 +86,14 @@ export function useDialogs() {
         pending.value = true
         error.value = null
         try {
-            messages.value = await $fetch<Message[]>(
+            const res = await $fetch<Message[]>(
                 `${apiBase}/messages/list?dialog_id=${encodeURIComponent(dialogId)}`,
                 {
                     method: 'GET',
                     headers: authHeaders.value
                 },
             )
+            messages.value = Array.isArray(res) ? res : []
             return messages.value
         } catch (err: any) {
             error.value = err?.data?.error || err?.message || 'Failed to load messages'
@@ -108,7 +111,18 @@ export function useDialogs() {
         pending.value = true
         error.value = null
         try {
-            await $fetch(`${apiBase}/message`, {
+            messages.value = [
+                ...messages.value,
+                {
+                    message_id: crypto.randomUUID(),
+                    dialog_id: activeDialogId.value,
+                    sender: 'user',
+                    content: text,
+                    create_at: new Date().toISOString(),
+                }
+            ]
+
+            await $fetch(`${apiBase}/messages`, {
                 method: 'POST',
                 headers: { ...(authHeaders.value || {}), 'Content-Type': 'application/json' },
                 body: {
@@ -117,6 +131,8 @@ export function useDialogs() {
                     content: text,
                 },
             })
+
+            await fetchMessages(activeDialogId.value)
         } catch (err: any){
             error.value = err?.data?.error || err?.message || 'Failed to send message'
             throw err

@@ -7,8 +7,9 @@ import LogOut from '~/widgets/auth/logout/ui/LogOut.vue'
     <div class="font-semibold tracking-tight">
       LLM Assistant
     </div>
-
-    <LogOut />
+    <ClientOnly>
+      <LogOut />
+    </ClientOnly>
   </header>
 </template>
 
