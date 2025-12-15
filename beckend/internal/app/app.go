@@ -1,14 +1,18 @@
 package app
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
 	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/config"
 	memory2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/database/memory"
+	postgres2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/database/postgres"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
 	userssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/users"
 	apphttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http"
+
+	_ "github.com/lib/pq"
 )
 
 // Application хранит все, что нужно для запуска сервера
@@ -26,11 +30,45 @@ func New(cfg *config.Config) *Application {
 	// создаем сервис пользователей
 	userService := userssvc.NewService(userRepo)
 
-	// Репозитории для диалогов и сообщений(in-memory)
-	dialogRepo := memory2.NewDialogRepository()
-	messageRepo := memory2.NewMessageRepository()
-	dialogService := dialogssvc.NewService(dialogRepo, messageRepo)
+	var (
+		dialogRepo  dialogssvc.DialogRepository
+		messageRepo dialogssvc.MessageRepository
+	)
 
+	if cfg.DBDSN != "" {
+		db, err := sql.Open("postgres", cfg.DBDSN)
+		if err != nil {
+			log.Fatal("db open error:", err)
+		}
+
+		if err := db.Ping(); err != nil {
+			log.Fatal("db ping error:", err)
+		}
+
+		_, err = db.Exec(`
+			  INSERT INTO users (id, email, name, password_hash)
+			  VALUES ($1, $2, $3, $4)
+			  ON CONFLICT (email) DO NOTHING
+			`,
+			"00000000-0000-0000-0000-000000000001",
+			"demo@local",
+			"Demo User",
+			"demo",
+		)
+		if err != nil {
+			log.Fatal("seed demo user error:", err)
+		}
+
+		dialogRepo = postgres2.NewDialogRepository(db)
+		messageRepo = postgres2.NewMessageRepository(db)
+		log.Println("storage: postgres")
+	} else {
+		dialogRepo = memory2.NewDialogRepository()
+		messageRepo = memory2.NewMessageRepository()
+		log.Println("storage: in-memory")
+	}
+
+	dialogService := dialogssvc.NewService(dialogRepo, messageRepo)
 	// создаем роутер
 	router := apphttp.NewRouter(userService, dialogService)
 

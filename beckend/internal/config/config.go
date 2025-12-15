@@ -12,7 +12,8 @@ type HTTPConfig struct {
 // Config - общая конфигурация приложения
 // TODO: добавить другие настройки (БД, кэш, OpenAI и т.д.)
 type Config struct {
-	HTTP *HTTPConfig
+	HTTP  *HTTPConfig
+	DBDSN string
 }
 
 // Load загружает конфигурацию из переменных окружения
@@ -22,9 +23,12 @@ func Load() *Config {
 		addr = ":8080" // значение по умолчанию
 	}
 
+	dns := os.Getenv("DB_DSN")
+
 	return &Config{
 		HTTP: &HTTPConfig{
 			Addr: addr,
 		},
+		DBDSN: dns,
 	}
 }

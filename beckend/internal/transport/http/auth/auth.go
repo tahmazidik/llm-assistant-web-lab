@@ -13,7 +13,7 @@ var (
 	ErrInvalidToken  = errors.New("invalid auth token")
 )
 
-const demoUserID = models.UserID("demo-user-1")
+const demoUserID = models.UserID("00000000-0000-0000-0000-000000000001")
 const demoToken = "demo-token-123"
 
 // UserIDFromRequest достает user_id из заголовка Authorization
