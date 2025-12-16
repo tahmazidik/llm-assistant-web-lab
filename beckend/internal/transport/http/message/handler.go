@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	models2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
@@ -75,6 +76,21 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		sender,
 		body.Content,
 	)
+
+	if sender == models2.SenderUser {
+		reply := makeAssistantReply(body.Content)
+
+		_, aErr := handler.DialogService.AddMessage(
+			ctx,
+			models2.DialogID(body.DialogID),
+			models2.SenderAssistant,
+			reply,
+		)
+		if aErr != nil {
+			log.Println("add assistant message error: ", aErr)
+		}
+	}
+
 	if err != nil {
 		switch err {
 		case dialogssvc.ErrEmptyMessageContent:
@@ -124,4 +140,22 @@ func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpresp.JSON(w, http.StatusOK, msg)
+}
+
+func makeAssistantReply(userText string) string {
+	text := strings.TrimSpace(userText)
+	if text == "" {
+		return "Я вас слушаю 🙂"
+	}
+
+	short := text
+	r := []rune(short)
+	if len(r) > 180 {
+		short = string(r[:180]) + "..."
+	}
+
+	if strings.Contains(short, "?") {
+		return "Понял вопрос? Коротко: " + short
+	}
+	return "Принято. Я понял: " + short
 }

@@ -111,13 +111,32 @@ export function useDialogs() {
         pending.value = true
         error.value = null
         try {
+            const tempUserId =
+                typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                  ? crypto.randomUUID()
+                  : `temp-user-${Date.now()}`
             messages.value = [
                 ...messages.value,
                 {
-                    message_id: crypto.randomUUID(),
+                    message_id: tempUserId,
                     dialog_id: activeDialogId.value,
                     sender: 'user',
                     content: text,
+                    create_at: new Date().toISOString(),
+                }
+            ]
+
+            const tempAssistantId =
+                typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                    ? crypto.randomUUID()
+                    : `temp-assistant-${Date.now()}`
+            messages.value = [
+                ...messages.value,
+                {
+                    message_id: tempAssistantId,
+                    dialog_id: activeDialogId.value,
+                    sender: 'assistant',
+                    content: 'Думаю...',
                     create_at: new Date().toISOString(),
                 }
             ]
@@ -132,6 +151,7 @@ export function useDialogs() {
                 },
             })
 
+            await new Promise((r) => setTimeout(r, 500))
             await fetchMessages(activeDialogId.value)
         } catch (err: any){
             error.value = err?.data?.error || err?.message || 'Failed to send message'
