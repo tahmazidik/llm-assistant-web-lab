@@ -3,6 +3,7 @@ package http
 import (
 	stdhttp "net/http"
 
+	assistantsvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/assistant"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
 	userssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/users"
 	dialogshttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/dialogs"
@@ -12,7 +13,7 @@ import (
 )
 
 // NewRouter создает и настраивает HTTP-роутер приложения
-func NewRouter(userService userssvc.Service, dialogService dialogssvc.Service) *stdhttp.ServeMux {
+func NewRouter(userService userssvc.Service, dialogService dialogssvc.Service, assistantService assistantsvc.Service) *stdhttp.ServeMux {
 	mux := stdhttp.NewServeMux()
 
 	// эндпоинт для проверки живости сервера
@@ -29,7 +30,7 @@ func NewRouter(userService userssvc.Service, dialogService dialogssvc.Service) *
 	mux.HandleFunc("/dialogs/list", dialogHandler.List)
 
 	// хендлер сообщений
-	messageHandler := messagehttp.NewHandler(dialogService)
+	messageHandler := messagehttp.NewHandler(dialogService, assistantService)
 	mux.HandleFunc("/messages", messageHandler.Create)
 	mux.HandleFunc("/messages/list", messageHandler.List)
 

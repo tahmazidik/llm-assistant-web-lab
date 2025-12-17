@@ -50,7 +50,7 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, err := authhttp.UserIDFromRequest(r)
 	if err != nil {
 		if errors.Is(err, authhttp.ErrNotAuthHeader) || errors.Is(err, authhttp.ErrInvalidToken) {
-			httpresp.Error(w, http.StatusBadRequest, "invalid token")
+			httpresp.Error(w, http.StatusBadRequest, "unauthorized")
 			return
 		}
 		log.Println("auth error: ", err)
@@ -91,7 +91,7 @@ func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 	userID, err := authhttp.UserIDFromRequest(r)
 	if err != nil {
 		if errors.Is(err, authhttp.ErrNotAuthHeader) || errors.Is(err, authhttp.ErrInvalidToken) {
-			httpresp.Error(w, http.StatusBadRequest, "invalid token")
+			httpresp.Error(w, http.StatusBadRequest, "unauthorized")
 			return
 		}
 		log.Println("auth error: ", err)

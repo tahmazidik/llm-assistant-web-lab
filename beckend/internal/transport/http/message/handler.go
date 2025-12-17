@@ -8,13 +8,15 @@ import (
 	"strings"
 
 	models2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
+	assistantsvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/assistant"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
 	authhttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/auth"
 	httpresp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/response"
 )
 
 type Handler struct {
-	DialogService dialogssvc.Service
+	DialogService    dialogssvc.Service
+	AssistantService assistantsvc.Service
 }
 
 type createMessageRequest struct {
@@ -23,9 +25,10 @@ type createMessageRequest struct {
 	Content  string `json:"content"`
 }
 
-func NewHandler(dialogService dialogssvc.Service) *Handler {
+func NewHandler(dialogService dialogssvc.Service, assistantService assistantsvc.Service) *Handler {
 	return &Handler{
-		DialogService: dialogService,
+		DialogService:    dialogService,
+		AssistantService: assistantService,
 	}
 }
 
@@ -63,34 +66,9 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sender := models2.SenderType(body.Sender)
-	if sender != models2.SenderUser && sender != models2.SenderAssistant {
-		httpresp.Error(w, http.StatusBadRequest, "invalid sender type")
-		return
-	}
-
 	ctx := r.Context()
-	msg, err := handler.DialogService.AddMessage(
-		ctx,
-		models2.DialogID(body.DialogID),
-		sender,
-		body.Content,
-	)
 
-	if sender == models2.SenderUser {
-		reply := makeAssistantReply(body.Content)
-
-		_, aErr := handler.DialogService.AddMessage(
-			ctx,
-			models2.DialogID(body.DialogID),
-			models2.SenderAssistant,
-			reply,
-		)
-		if aErr != nil {
-			log.Println("add assistant message error: ", aErr)
-		}
-	}
-
+	userMsg, err := handler.DialogService.AddMessage(ctx, models2.DialogID(body.DialogID), models2.SenderUser, body.Content)
 	if err != nil {
 		switch err {
 		case dialogssvc.ErrEmptyMessageContent:
@@ -98,13 +76,32 @@ func (handler *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		case dialogssvc.ErrDialogNotFound:
 			httpresp.Error(w, http.StatusNotFound, "dialog not found")
 		default:
-			log.Println("add message error: ", err)
+			log.Println("add message error:", err)
 			httpresp.Error(w, http.StatusInternalServerError, "internal server error")
 		}
 		return
 	}
 
-	httpresp.JSON(w, http.StatusCreated, msg)
+	reply := ""
+	if handler.AssistantService != nil {
+		text, rErr := handler.AssistantService.Reply(ctx, models2.DialogID(body.DialogID))
+		if rErr != nil {
+			log.Println("assistant reply error:", rErr)
+			reply = makeAssistantReply(body.Content)
+		} else {
+			reply = text
+		}
+	} else {
+		reply = makeAssistantReply(body.Content)
+	}
+
+	if strings.TrimSpace(reply) != "" {
+		if _, aErr := handler.DialogService.AddMessage(ctx, models2.DialogID(body.DialogID), models2.SenderAssistant, reply); aErr != nil {
+			log.Println("add assistant message error:", aErr)
+		}
+	}
+
+	httpresp.JSON(w, http.StatusCreated, userMsg)
 }
 
 // List обрабатывает GET/messages запрос для получения списка сообщений

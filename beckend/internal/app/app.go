@@ -8,6 +8,7 @@ import (
 	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/config"
 	memory2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/database/memory"
 	postgres2 "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/database/postgres"
+	assistantsvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/assistant"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
 	userssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/users"
 	apphttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http"
@@ -17,10 +18,11 @@ import (
 
 // Application хранит все, что нужно для запуска сервера
 type Application struct {
-	cfg           *config.Config // на каком адресе запускать сервер
-	router        *http.ServeMux // HTTP роутер
-	userService   userssvc.Service
-	dialogService dialogssvc.Service
+	cfg              *config.Config // на каком адресе запускать сервер
+	router           *http.ServeMux // HTTP роутер
+	userService      userssvc.Service
+	dialogService    dialogssvc.Service
+	assistantService assistantsvc.Service
 }
 
 // New создает новое приложение: настраивает роутер и порт
@@ -69,15 +71,35 @@ func New(cfg *config.Config) *Application {
 	}
 
 	dialogService := dialogssvc.NewService(dialogRepo, messageRepo)
+
+	var assistantService assistantsvc.Service
+
+	if cfg.OpenAIKey == "" {
+		log.Println("openai: OPENAI_API_KEY is empty (assistant replace disabled)")
+	} else {
+		svc, err := assistantsvc.New(dialogService, assistantsvc.Config{
+			APIKey:      cfg.OpenAIKey,
+			MaxHistory:  20,
+			SystemIntro: "You are a helpful assistant. Answer clearly and concisely.",
+		})
+
+		if err != nil {
+			log.Println("openai: assistant service init error:", err)
+		} else {
+			assistantService = svc
+		}
+	}
+
 	// создаем роутер
-	router := apphttp.NewRouter(userService, dialogService)
+	router := apphttp.NewRouter(userService, dialogService, assistantService)
 
 	// кладем все в Application
 	return &Application{
-		cfg:           cfg,
-		router:        router,
-		userService:   userService,
-		dialogService: dialogService,
+		cfg:              cfg,
+		router:           router,
+		userService:      userService,
+		dialogService:    dialogService,
+		assistantService: assistantService,
 	}
 }
 
