@@ -1,144 +1,102 @@
-# LLM Assistant Cabinet — Backend
+# LLM Assistant — Go backend + Nuxt frontend
 
-Учебный бэкенд-проект на Go для личного веб-кабинета с ИИ-ассистентом.
+Учебный проект: чат с ИИ‑ассистентом. Бэкенд на Go, фронт на Nuxt 4. Есть Postgres + миграции, интеграция с OpenAI (по ключу).
 
-Планируется, что пользователь сможет:
-- регистрироваться и авторизоваться;
-- вести список диалогов с ИИ-ассистентом;
-- создавать «дела»/задачи и вести по ним заметки;
-- вызывать ИИ для помощи: объяснить материал, составить план документа, сформировать черновики и т.д.
+## Что готово
 
----
+- Регистрация и логин (демо-токен, простая проверка пары email/пароль).
+- Диалоги: создание, список, добавление сообщений (user/assistant), сохранение в Postgres.
+- Имитация ответа ассистента или реальный ответ через OpenAI при наличии `OPENAI_API_KEY`.
+- REST эндпоинты: `/health`, `/users/register`, `/users/login`, `/dialogs`, `/dialogs/list`, `/messages`, `/messages/list`.
+- Фронтенд (Nuxt): список диалогов, чат с отправкой, HeroPrompt старт.
+
+## Что ещё в плане
+
+- Нормальная аутентификация и проверка токенов (сейчас фиксированный demo-token).
+- Задачи/заметки (модели есть, UI/Handlers пока нет).
+- Тесты, валидация и защита от злоупотреблений.
 
 ## Стек
 
-- Go (`net/http`, стандартная библиотека)
-- Архитектура с разделением на слои:
-    - transport (HTTP);
-    - services (бизнес-логика);
-    - database (хранилище, сейчас in-memory);
-    - app (сборка приложения).
-- Вспомогательные пакеты:
-    - `golang.org/x/crypto/bcrypt` — хеширование паролей;
-    - `github.com/google/uuid` — генерация идентификаторов.
+- Backend: Go 1.25, `net/http`, Postgres, `github.com/sashabaranov/go-openai`, `github.com/google/uuid`, `golang.org/x/crypto/bcrypt`.
+- Frontend: Nuxt 4, Vue 3, Tailwind 4.
+- Infra: Docker/Docker Compose, миграции `migrate/migrate`.
 
-В будущем:
-- PostgreSQL в качестве основного хранилища;
-- OpenAI API для интеграции ИИ-ассистента;
-- миграции БД (`migrations/`).
-
----
-
-## Что уже реализовано
-
-### Пользователи
-
-Сервис и HTTP-слой для базовой аутентификации:
-
-- **Регистрация**  
-  `POST /users/register`
-    - Принимает JSON:
-      ```json
-      {
-        "email": "user@example.com",
-        "password": "secret",
-        "name": "User Name"
-      }
-      ```
-    - Хеширует пароль через `bcrypt`;
-    - Проверяет уникальность email;
-    - Возвращает созданного пользователя (без пароля).
-
-- **Логин**  
-  `POST /users/login`
-    - Принимает JSON:
-      ```json
-      {
-        "email": "user@example.com",
-        "password": "secret"
-      }
-      ```
-    - Проверяет email/пароль через сервис;
-    - При успехе возвращает данные пользователя.
-
-На этом этапе токенов/сессий нет — только проверка пары email/пароль.
-
-### Диалоги
-
-Сервис диалогов и in-memory-хранилище:
-
-- **Создание диалога**  
-  `POST /dialogs`
-    - Принимает JSON:
-      ```json
-      {
-        "user_id": "user-id",
-        "title": "Название диалога"
-      }
-      ```
-    - Тримит пробелы в заголовке, проверяет, что заголовок не пустой;
-    - Создаёт `Dialog` с `id`, `user_id`, `title`, `create_at`, `update_at`;
-    - Сохраняет диалог в in-memory репозитории;
-    - Возвращает созданный диалог в JSON.
-
-Внутри уже есть интерфейс сервиса для:
-- `CreateDialog`
-- `ListDialogs`
-- `AddMessage`
-- `ListMessages`
-
-и in-memory репозитории для диалогов и сообщений. HTTP-эндпоинты для списка диалогов и сообщений будут добавлены позже.
-
-### Health-check
-
-- `GET /health` → возвращает `"ok"`, используется для проверки живости сервера.
-
----
-
-## Текущая структура проекта
+## Структура
 
 ```text
-cmd/
-  api/
-    main.go                # точка входа
+beckend/
+  cmd/api/main.go           # точка входа
+  internal/
+    app/                    # сборка приложения, выбор хранилища, инициация сервисов
+    config/                 # конфиг из env
+    models/                 # доменные сущности (user, dialog, message, task, note)
+    services/               # бизнес-логика (users, dialogs, assistant)
+    transport/http/         # роутер и хендлеры (users, dialogs, messages, health)
+    database/               # memory/postgres реализации репозиториев
+  migrations/               # SQL миграции
+  Dockerfile
 
-internal/
-  app/                     # Application: сборка сервера (репозитории, сервисы, роутер)
-  config/                  # загрузка конфигурации (порт и т.д.)
+frontend/
+  app/                      # Nuxt приложение, виджеты, composables
+  Dockerfile
 
-  models/                  # доменные модели (User, Dialog, Message, Task, Note)
-    user.go
-    dialogs.go
-    message.go
-    task.go
-    note.go
+docker-compose.yml          # db + миграции + backend + frontend
+```
 
-  transport/
-    http/                  # HTTP-транспортный слой
-      router.go            # создание ServeMux и привязка маршрутов
-      health/              # /health
-        handler.go         # health.Handler
-      users/               # /users/*
-        handler.go         # регистрация и логин пользователей
-      dialogs/             # /dialogs/*
-        handler.go         # создание диалога (и будущие эндпоинты)
+## Настройки / переменные окружения
 
-  services/                # бизнес-логика
-    users/                 # UserService: регистрация, аутентификация, поиск по ID/email
-      service.go
-    dialogs/               # DialogService: диалоги и сообщения
-      service.go
-    tasks/                 # (пока задел под задачи/дела)
+- `beckend/.env` — можно положить `OPENAI_API_KEY=...`. В контейнере бэка .env подключается через `env_file`.
+- Backend (compose задаёт по умолчанию):
+  - `DB_DSN=postgres://llm:llm@db:5432/llm-assistant?sslmode=disable`
+  - `APP_HTTP_ADDR=:8080`
+  - `OPENAI_API_KEY` — обязательно, если нужен реальный ответ ассистента.
+- Frontend: `NUXT_PUBLIC_API_BASE` (по умолчанию `http://localhost:8080`).
+- Postgres (db сервис): `llm/llm`, база `llm-assistant`, хост-порт `5434`.
 
-  database/                # слой работы с хранилищем
-    memory/                # in-memory реализации репозиториев
-      users.go             # UserRepository (пользователи)
-      dialogs.go           # DialogRepository (диалоги)
-      message.go           # MessageRepository (сообщения)
-    jsonstore/             # (пока не используется)
-    postgres/              # (пока не используется)
+## Запуск в Docker
 
-api/                       # (в будущем) OpenAPI/Swagger спецификация
-configs/                   # конфиги (yaml/json)
-docs/                      # документация по проекту
-migrations/                # миграции для БД (позже)
+Требуется Docker/Compose.
+
+```bash
+# собрать образы
+docker compose build
+
+# поднять БД
+docker compose up -d db
+
+# накатить миграции (один раз)
+docker compose run --rm migrate up
+
+# запустить бэк и фронт
+docker compose up -d backend frontend
+```
+
+Доступы: фронт `http://localhost:3000`, бэк `http://localhost:8080`. Если нужен доступ к БД с хоста: `postgres://llm:llm@localhost:5434/llm-assistant`.
+
+Можно одной командой (миграции запустятся как сервис и завершатся):
+
+```bash
+docker compose up --build
+```
+
+## Локальный запуск без Docker
+
+```bash
+
+# backend
+cd beckend
+APP_HTTP_ADDR=:8080 DB_DSN="postgres://llm:llm@localhost:5432/llm-assistant?sslmode=disable" OPENAI_API_KEY=... go run ./cmd/api
+
+# frontend
+cd frontend
+npm install
+NUXT_PUBLIC_API_BASE=http://localhost:8080 npm run dev
+```
+
+## Как взять OpenAI API key
+
+1) Залогиниться на https://platform.openai.com/api-keys
+2) Нажать “Create new secret key” и сохранить значение.
+3) Прописать его в `beckend/.env` (`OPENAI_API_KEY=...`) или передать через окружение при запуске Docker/бэка.
+Без ключа ассистент отвечает заглушкой.
