@@ -80,9 +80,9 @@ async function onSend() {
     </div>
 
     <!-- input -->
-    <div class="border-t border-white/10 bg-[#292828] px-4 py-4">
+    <div class="border-t border-white/5 bg-transparent px-4 pb-6 pt-5">
       <div class="mx-auto w-full max-w-3xl">
-        <div class="relative rounded-2xl border border-white/10 bg-[#2e2d2d] px-3 py-2">
+        <div class="relative rounded-full border border-white/10 bg-[#2e2d2d]/80 px-5 py-3 shadow-[0_10px_40px_-20px_rgba(0,0,0,0.7)] backdrop-blur">
           <input
               v-model="input"
               @keydown.enter.prevent="onSend"

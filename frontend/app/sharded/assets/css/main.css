@@ -17,3 +17,27 @@ body {
     overflow: hidden;
     background: #1f1f1f;
 }
+
+/* Dark, unobtrusive scrollbars */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #4b5563 #1f1f1f;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #1f1f1f;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 9999px;
+    border: 2px solid #1f1f1f;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
