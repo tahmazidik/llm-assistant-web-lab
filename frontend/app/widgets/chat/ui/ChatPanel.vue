@@ -1,107 +1,109 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
-import { useDialogs } from '~/sharded/composables/useDialogs'
+import { ref, watch, nextTick } from 'vue'
+import { useChat } from '~/sharded/composables/useChat'
 
-const { activeDialogId, messages, pending, error, fetchMessages, sendMessage } = useDialogs()
+const props = defineProps<{ dialogId: string }>()
 
-const input = ref('')
-const listEl = ref<HTMLElement | null>(null)
+const { messages, input, isSending, error, loadMessages, sendMessage } = useChat()
 
-async function scrollToBottom() {
-  await nextTick()
-  if (!listEl.value) return
-  listEl.value.scrollTop = listEl.value.scrollHeight
+const listRef = ref<HTMLElement | null>(null)
+
+function scrollToBottom(smooth = true) {
+  const el = listRef.value
+  if (!el) return
+  el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })
 }
 
-async function load() {
-  if (!activeDialogId.value) return
-  await fetchMessages(activeDialogId.value)
-  await scrollToBottom()
-}
-
-async function handleSend() {
-  const text = input.value.trim()
-  if (!text) return
-
-  await sendMessage(text)
-  input.value = ''
-  await scrollToBottom()
-}
-
-onMounted(load)
-
-watch(activeDialogId, async () => {
-  await load()
-})
+watch(
+    () => props.dialogId,
+    async (id) => {
+      if (!id) return
+      await loadMessages(id)
+      await nextTick()
+      scrollToBottom(false)
+    },
+    { immediate: true }
+)
 
 watch(
     () => messages.value.length,
     async () => {
-      await scrollToBottom()
-    },
+      await nextTick()
+      scrollToBottom(true)
+    }
 )
+
+async function onSend() {
+  if (!props.dialogId) return
+  await sendMessage(props.dialogId, input.value)
+}
 </script>
 
 <template>
-  <section class="flex-1 flex items-center justify-center px-4 py-10">
-    <div class="w-full max-w-4xl">
-      <div class="rounded-3xl border border-slate-700/60 bg-[#2e2d2d] shadow-xl shadow-black/30 overflow-hidden">
-        <!-- messages -->
-        <div
-            ref="listEl"
-            class="h-[60vh] md:h-[65vh] overflow-y-auto px-5 py-5 space-y-4"
-        >
-          <div v-if="pending" class="text-sm text-slate-400">Loading…</div>
-          <div v-else-if="error" class="text-sm text-red-300">{{ error }}</div>
-
-          <template v-else>
-            <div v-if="messages.length === 0" class="text-sm text-slate-400">
-              Пока нет сообщений. Напиши первое 🙂
-            </div>
-
-            <div
-                v-for="m in messages"
-                :key="m.message_id"
-                class="flex"
-                :class="m.sender === 'user' ? 'justify-end' : 'justify-start'"
-            >
-              <div
-                  class="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed border"
-                  :class="m.sender === 'user'
-                  ? 'bg-slate-100 text-black border-slate-200'
-                  : 'bg-[#252424] text-slate-100 border-slate-700/70'"
-              >
-                {{ m.content }}
-              </div>
-            </div>
-          </template>
+  <div class="flex h-full min-h-0 flex-col">
+    <!-- messages -->
+    <div ref="listRef" class="flex-1 min-h-0 overflow-y-auto">
+      <div class="mx-auto w-full max-w-3xl px-4 py-6 space-y-6">
+        <div v-if="error" class="text-sm text-red-300">
+          {{ error }}
         </div>
 
-        <!-- input -->
-        <div class="border-t border-slate-700/60 px-4 py-3">
-          <div class="flex items-center gap-3">
-            <input
-                v-model="input"
-                @keydown.enter.prevent="handleSend"
-                type="text"
-                placeholder="Message…"
-                class="flex-1 bg-transparent outline-none text-white placeholder:text-slate-400
-                     text-sm md:text-base border border-slate-700/70 rounded-2xl px-3 py-2.5
-                     focus:border-slate-200 transition"
-            />
+        <template v-if="messages.length === 0">
+          <div class="text-slate-300/80 text-base">
+            Пока нет сообщений. Напиши первое 🙂
+          </div>
+        </template>
 
-            <button
-                type="button"
-                @click="handleSend"
-                class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white
-                     text-xs font-semibold hover:bg-slate-200 transition flex-shrink-0"
-                aria-label="Send"
-            >
-              ▶
-            </button>
+        <div v-for="m in messages" :key="m.id" class="flex" :class="m.sender === 'user' ? 'justify-end' : 'justify-start'">
+          <div
+              class="max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed border"
+              :class="m.sender === 'user'
+              ? 'bg-slate-100 text-black border-slate-200'
+              : 'bg-[#2e2d2d] text-slate-100 border-white/10'"
+          >
+            <template v-if="m.status === 'thinking'">
+              <div class="flex items-center gap-2 text-slate-300">
+                <span>Assistant is thinking</span>
+                <span class="inline-flex items-end gap-1">
+                  <span class="h-1 w-1 rounded-full bg-slate-300 animate-bounce [animation-delay:0ms]"></span>
+                  <span class="h-1 w-1 rounded-full bg-slate-300 animate-bounce [animation-delay:150ms]"></span>
+                  <span class="h-1 w-1 rounded-full bg-slate-300 animate-bounce [animation-delay:300ms]"></span>
+                </span>
+              </div>
+            </template>
+            <template v-else>
+              {{ m.content }}
+            </template>
           </div>
         </div>
       </div>
     </div>
-  </section>
+
+    <!-- input -->
+    <div class="border-t border-white/10 bg-[#292828] px-4 py-4">
+      <div class="mx-auto w-full max-w-3xl">
+        <div class="relative rounded-2xl border border-white/10 bg-[#2e2d2d] px-3 py-2">
+          <input
+              v-model="input"
+              @keydown.enter.prevent="onSend"
+              type="text"
+              placeholder="Спросите что-нибудь..."
+              class="w-full bg-transparent outline-none text-white placeholder:text-slate-400 pr-12"
+          />
+
+          <button
+              type="button"
+              @click="onSend"
+              :disabled="isSending || !input.trim()"
+              class="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full
+                   bg-white text-black transition disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-200"
+              aria-label="Send"
+          >
+            <span v-if="isSending">…</span>
+            <span v-else>↑</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

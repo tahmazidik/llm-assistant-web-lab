@@ -6,3 +6,14 @@
     font-weight: normal;
     font-style: normal;
 }
+
+html,
+body,
+#__nuxt {
+    height: 100%;
+}
+
+body {
+    overflow: hidden;
+    background: #1f1f1f;
+}

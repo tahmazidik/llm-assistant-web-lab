@@ -1,74 +1,50 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useDialogs } from '~/sharded/composables/useDialogs' // путь поправь
+import { useDialogs } from '~/sharded/composables/useDialogs'
+import { useChat } from '~/sharded/composables/useChat'
 
-const prompt = ref('')
-const { activeDialogId, createDialog, sendMessage } = useDialogs()
+const { createDialog, setActiveDialog } = useDialogs()
+const { sendMessage, resetChatState } = useChat()
 
-async function handleSend() {
-  const text = prompt.value.trim()
-  if (!text) return
+const text = ref('')
 
-  if (!activeDialogId.value) {
-    await createDialog(text.slice(0, 40))
-  }
+async function start() {
+  const q = (text.value || '').trim()
+  if (!q) return
 
-  await sendMessage(text)
-  prompt.value = ''
+  resetChatState()
+
+  // создаём диалог и сразу отправляем первое сообщение
+  const dialog = await createDialog(q.slice(0, 60) || 'New chat')
+  setActiveDialog(dialog.id)
+
+  text.value = ''
+  await sendMessage(dialog.id, q)
 }
-
 </script>
 
 <template>
-  <section class="flex-1 flex items-center justify-center px-4">
-    <div class="w-full max-w-2xl space-y-8">
-      <div class="text-center space-y-3">
-        <p class="text-[10px] md:text-xs uppercase tracking-[0.3em] text-slate-500">
-          LLM Assistant
-        </p>
+  <div class="flex flex-1 items-center justify-center px-4">
+    <div class="w-full max-w-3xl text-center space-y-6">
+      <h1 class="text-3xl md:text-4xl font-semibold">Над чем ты работаешь?</h1>
 
-        <h1 class="text-3xl md:text-4xl font-semibold">
-          What can I help with?
-        </h1>
-      </div>
-
-      <div class="bg-[#2e2d2d] border border-[#2e2d2d] rounded-3xl p-4 md:-5 shadow-xl shadow-black-40">
-        <div class="flex items-center gap-3">
-          <input
-              v-model="prompt"
-              @keydown.enter.prevent="handleSend"
-              type="text"
-              placeholder="Ask anything..."
-              class="flex-1 bg-transparent outline-none text-white placeholder:text-white
-                     text-sm md:text-base border border-[#2e2d2d] rounded-2xl px-3 py-2.5
-                      focus:border-slate-200 transition"
-          />
-
-          <button
-              type="button"
-              @click="handleSend"
-              class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white
-                        text-xs font-semibold hover:bg-slate-200 transition flex-shrink-0">
-            ▶
-          </button>
-        </div>
-
-        <div class="mt-4 flex flex-wrap gap-2 text-[11px] md:text-xs">
-          <span class="text-slate-500 mr-1">Try:</span>
-          <button
-              v-for="item in ['Brainstorm', 'Code', 'Summarize text', 'Get advice', 'Search', 'Explain']"
-              :key="item"
-              class="px-3 py-1 rounded-full bg-[#2e2d2d] text-slate-100 border border-slate-700
-                     hover:bg-slate-700 transition"
-          >
-            {{ item }}
-          </button>
-        </div>
+      <div class="relative rounded-2xl border border-white/10 bg-[#2e2d2d] px-4 py-3 text-left">
+        <input
+            v-model="text"
+            @keydown.enter.prevent="start"
+            placeholder="Спросите что-нибудь..."
+            class="w-full bg-transparent outline-none text-white placeholder:text-slate-400 pr-12"
+        />
+        <button
+            type="button"
+            @click="start"
+            :disabled="!(text || '').trim()"
+            class="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full
+                 bg-white text-black transition disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-200"
+        >
+          ↑
+        </button>
       </div>
     </div>
-  </section>
+  </div>
 </template>
-
-<style scoped lang="scss">
-
-</style>
