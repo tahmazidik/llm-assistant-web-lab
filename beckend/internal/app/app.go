@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -27,12 +28,8 @@ type Application struct {
 
 // New создает новое приложение: настраивает роутер и порт
 func New(cfg *config.Config) *Application {
-	// Создаем репозиторий пользователей(in-memory)
-	userRepo := memory2.NewUserRepository()
-	// создаем сервис пользователей
-	userService := userssvc.NewService(userRepo)
-
 	var (
+		userRepo    userssvc.Repository
 		dialogRepo  dialogssvc.DialogRepository
 		messageRepo dialogssvc.MessageRepository
 	)
@@ -47,29 +44,18 @@ func New(cfg *config.Config) *Application {
 			log.Fatal("db ping error:", err)
 		}
 
-		_, err = db.Exec(`
-			  INSERT INTO users (id, email, name, password_hash)
-			  VALUES ($1, $2, $3, $4)
-			  ON CONFLICT (email) DO NOTHING
-			`,
-			"00000000-0000-0000-0000-000000000001",
-			"demo@local",
-			"Demo User",
-			"demo",
-		)
-		if err != nil {
-			log.Fatal("seed demo user error:", err)
-		}
-
+		userRepo = postgres2.NewUserRepository(db)
 		dialogRepo = postgres2.NewDialogRepository(db)
 		messageRepo = postgres2.NewMessageRepository(db)
 		log.Println("storage: postgres")
 	} else {
+		userRepo = memory2.NewUserRepository()
 		dialogRepo = memory2.NewDialogRepository()
 		messageRepo = memory2.NewMessageRepository()
 		log.Println("storage: in-memory")
 	}
 
+	userService := userssvc.NewService(userRepo)
 	dialogService := dialogssvc.NewService(dialogRepo, messageRepo)
 
 	var assistantService assistantsvc.Service
@@ -88,6 +74,11 @@ func New(cfg *config.Config) *Application {
 		} else {
 			assistantService = svc
 		}
+	}
+
+	// Пытаемся создать демо-пользователя, если его нет
+	if _, err := userService.Register(context.Background(), "demo@local", "demo", "Demo User"); err != nil && err != userssvc.ErrEmailAlreadyInUse {
+		log.Println("seed demo user error:", err)
 	}
 
 	// создаем роутер
