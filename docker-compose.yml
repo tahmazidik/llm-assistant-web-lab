@@ -5,6 +5,12 @@ services:
       POSTGRES_USER: llm
       POSTGRES_PASSWORD: llm
       POSTGRES_DB: llm-assistant
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U llm -d llm-assistant" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     ports:
       - "127.0.0.1:5434:5432"
     volumes:
@@ -29,11 +35,13 @@ services:
     environment:
       DB_DSN: postgres://llm:llm@db:5432/llm-assistant?sslmode=disable
       APP_HTTP_ADDR: :8080
-      #OPENAI_API_KEY: 
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8080:8080"
+    restart: unless-stopped
 
   frontend:
     build:
