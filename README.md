@@ -54,6 +54,16 @@ docker-compose.yml          # db + миграции + backend + frontend
 - Frontend: `NUXT_PUBLIC_API_BASE` (по умолчанию `http://localhost:8080`).
 - Postgres (db сервис): `llm/llm`, база `llm-assistant`, хост-порт `5434`.
 
+## Что нужно установить перед запуском
+
+### Вариант 1: Docker (проще)
+- Поставить Docker и Docker Compose. Больше ничего.
+
+### Вариант 2: Локально без Docker
+- Go 1.25+
+- Node.js 18+ и npm
+- Зависимости фронтенда: в каталоге `frontend` выполнить `npm install` (Nuxt и Tailwind уже в package.json)
+
 ## Запуск в Docker
 
 Требуется Docker/Compose.
@@ -99,4 +109,4 @@ NUXT_PUBLIC_API_BASE=http://localhost:8080 npm run dev
 1) Залогиниться на https://platform.openai.com/api-keys
 2) Нажать “Create new secret key” и сохранить значение.
 3) Прописать его в `beckend/.env` (`OPENAI_API_KEY=...`) или передать через окружение при запуске Docker/бэка.
-Без ключа ассистент отвечает заглушкой.
+   Без ключа ассистент отвечает заглушкой.
