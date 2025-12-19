@@ -25,6 +25,9 @@ type Service interface {
 	//ListDialogs возвращает список диалогов пользователя
 	ListDialogs(ctx context.Context, userID models2.UserID) ([]*models2.Dialog, error)
 
+	// DeleteDialog удаляет диалог пользователя (и его сообщения)
+	DeleteDialog(ctx context.Context, userID models2.UserID, dialogID models2.DialogID) error
+
 	// AddMessage добавляет сообщение в диалог
 	AddMessage(ctx context.Context, dialogID models2.DialogID, sender models2.SenderType, content string) (*models2.Message, error)
 
@@ -38,12 +41,14 @@ type DialogRepository interface {
 	GetByID(ctx context.Context, dialogID models2.DialogID) (*models2.Dialog, error)
 	ListByUser(ctx context.Context, userID models2.UserID) ([]*models2.Dialog, error)
 	Update(ctx context.Context, dialog *models2.Dialog) error
+	Delete(ctx context.Context, dialogID models2.DialogID) error
 }
 
 // MessageRepository описывает операции с сообщениями в хранилище
 type MessageRepository interface {
 	Create(ctx context.Context, msg *models2.Message) error
 	ListByDialog(ctx context.Context, dialogID models2.DialogID) ([]*models2.Message, error)
+	DeleteByDialog(ctx context.Context, dialogID models2.DialogID) error
 }
 
 // service - конкретная реализация Service
@@ -86,6 +91,27 @@ func (svc *service) CreateDialog(ctx context.Context, userID models2.UserID, tit
 
 func (svc *service) ListDialogs(ctx context.Context, userID models2.UserID) ([]*models2.Dialog, error) {
 	return svc.dialogRepo.ListByUser(ctx, userID)
+}
+
+func (svc *service) DeleteDialog(ctx context.Context, userID models2.UserID, dialogID models2.DialogID) error {
+	dialog, err := svc.dialogRepo.GetByID(ctx, dialogID)
+	if err != nil {
+		return err
+	}
+
+	if dialog == nil || dialog.UserID != userID {
+		return ErrDialogNotFound
+	}
+
+	if err := svc.messageRepo.DeleteByDialog(ctx, dialogID); err != nil {
+		return err
+	}
+
+	if err := svc.dialogRepo.Delete(ctx, dialogID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (svc *service) AddMessage(ctx context.Context, dialogID models2.DialogID, sender models2.SenderType, content string) (*models2.Message, error) {

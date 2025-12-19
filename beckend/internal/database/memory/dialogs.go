@@ -90,3 +90,31 @@ func (dialogRepo *DialogRepository) Update(ctx context.Context, dialog *models2.
 
 	return nil
 }
+
+// Delete удаляет диалог из хранилища
+func (dialogRepo *DialogRepository) Delete(ctx context.Context, id models2.DialogID) error {
+	dialogRepo.mu.Lock()
+	defer dialogRepo.mu.Unlock()
+
+	dialog, ok := dialogRepo.byID[id]
+	if !ok {
+		return nil
+	}
+
+	delete(dialogRepo.byID, id)
+
+	dialogs := dialogRepo.byUserID[dialog.UserID]
+	filtered := dialogs[:0]
+	for _, d := range dialogs {
+		if d.ID != id {
+			filtered = append(filtered, d)
+		}
+	}
+	if len(filtered) == 0 {
+		delete(dialogRepo.byUserID, dialog.UserID)
+	} else {
+		dialogRepo.byUserID[dialog.UserID] = filtered
+	}
+
+	return nil
+}

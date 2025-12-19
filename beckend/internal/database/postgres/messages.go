@@ -61,3 +61,11 @@ func (r *MessageRepository) ListByDialog(ctx context.Context, dialogID models2.D
 	}
 	return out, rows.Err()
 }
+
+func (r *MessageRepository) DeleteByDialog(ctx context.Context, dialogID models2.DialogID) error {
+	_, err := r.db.ExecContext(ctx, `
+		DELETE FROM messages
+		WHERE dialog_id = $1
+	`, string(dialogID))
+	return err
+}

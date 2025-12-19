@@ -28,6 +28,7 @@ func NewRouter(userService userssvc.Service, dialogService dialogssvc.Service, a
 	dialogHandler := dialogshttp.NewHandler(dialogService)
 	mux.HandleFunc("/dialogs", dialogHandler.Create)
 	mux.HandleFunc("/dialogs/list", dialogHandler.List)
+	mux.HandleFunc("/dialogs/delete", dialogHandler.Delete)
 
 	// хендлер сообщений
 	messageHandler := messagehttp.NewHandler(dialogService, assistantService)

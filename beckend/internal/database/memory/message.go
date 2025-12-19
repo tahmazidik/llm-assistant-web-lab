@@ -44,3 +44,12 @@ func (repo *MessageRepository) ListByDialog(ctx context.Context, dialogID models
 
 	return messages, nil
 }
+
+// DeleteByDialog удаляет все сообщения диалога
+func (repo *MessageRepository) DeleteByDialog(ctx context.Context, dialogID models2.DialogID) error {
+	repo.mu.Lock()
+	defer repo.mu.Unlock()
+
+	delete(repo.byDialogID, dialogID)
+	return nil
+}

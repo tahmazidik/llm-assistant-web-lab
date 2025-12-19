@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/models"
 	dialogssvc "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/services/dialogs"
 	authhttp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/auth"
 	httpresp "github.com/tahmazidik/llm-assistant-web-lab/beckend/internal/transport/http/response"
@@ -25,6 +26,10 @@ func NewHandler(dialogService dialogssvc.Service) *Handler {
 
 type createdDialogResponse struct {
 	Title string `json:"title"`
+}
+
+type deleteDialogRequest struct {
+	DialogID string `json:"dialog_id"`
 }
 
 // Create обрабатывает POST/dialogs запрос для создания нового диалога
@@ -108,4 +113,48 @@ func (handler *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpresp.JSON(w, http.StatusOK, dialogs)
+}
+
+// Delete обрабатывает DELETE /dialogs/delete запрос для удаления диалога
+func (handler *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		httpresp.Error(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	var req deleteDialogRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpresp.Error(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+
+	if req.DialogID == "" {
+		httpresp.Error(w, http.StatusBadRequest, "dialog_id is required")
+		return
+	}
+
+	userID, err := authhttp.UserIDFromRequest(r)
+	if err != nil {
+		if errors.Is(err, authhttp.ErrNotAuthHeader) || errors.Is(err, authhttp.ErrInvalidToken) {
+			httpresp.Error(w, http.StatusBadRequest, "unauthorized")
+			return
+		}
+		log.Println("auth error: ", err)
+		httpresp.Error(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	ctx := r.Context()
+	if err := handler.DialogService.DeleteDialog(ctx, userID, models.DialogID(req.DialogID)); err != nil {
+		switch err {
+		case dialogssvc.ErrDialogNotFound:
+			httpresp.Error(w, http.StatusNotFound, "dialog not found")
+		default:
+			log.Println("delete dialog error: ", err)
+			httpresp.Error(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

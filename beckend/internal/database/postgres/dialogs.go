@@ -88,3 +88,11 @@ func (r *DialogRepository) Update(ctx context.Context, dialog *models2.Dialog) e
 	`, string(dialog.ID), dialog.Title, dialog.UpdateAt)
 	return err
 }
+
+func (r *DialogRepository) Delete(ctx context.Context, dialogID models2.DialogID) error {
+	_, err := r.db.ExecContext(ctx, `
+		DELETE FROM dialogs
+		WHERE id = $1
+	`, string(dialogID))
+	return err
+}
